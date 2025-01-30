@@ -1,0 +1,12 @@
+sample,runid,library,fast5_folder
+nv,run1,A,/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/raw_data/cohort/nv/fast5
+P26,run1,A,/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/raw_data/cohort/P26/fast5
+P27,run1,A,/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/raw_data/cohort/P27/fast5
+P28,run1,A,/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/raw_data/cohort/P28/fast5
+P28x,run1,A,/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/raw_data/cohort/P28x/fast5
+P31,run1,A,/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/raw_data/cohort/P31/fast5
+P32,run1,A,/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/raw_data/cohort/P32/fast5
+P33,run1,A,/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/raw_data/cohort/P33/fast5
+P35,run1,A,/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/raw_data/cohort/P35/fast5
+P38,run1,A,/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/raw_data/cohort/P38/fast5
+P40,run1,A,/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/raw_data/cohort/P40/fast5

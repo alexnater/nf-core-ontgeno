@@ -27,7 +27,15 @@
 
 <!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
      workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
+1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+3. Map reads to reference genome with minimap2
+4. Perform variant calling with Clair3, DeepVariant, and GATK4 HaplotypeCaller
+5. Joint genotype calling with GLNexus
+6. Phasing with Eagle2 and Whatshap
+7. Variant annotation with Ensembl VEP
+8. Structural variant calling with Sniffles2 and cuteSV
 
 ## Usage
 
@@ -35,29 +43,74 @@
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow.Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
 
 <!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
+     Explain what rows and columns represent. For instance (please edit as appropriate): -->
 
 First, prepare a samplesheet with your input data that looks as follows:
 
 `samplesheet.csv`:
 
 ```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+sample,runid,library,fastq_1,fastq_2
+patient01,run1,A,/path_to_data/patient01.fastq.gz,
 ```
 
 Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
 
--->
+Next, prepare a YAML file for the pipeline parameters, referring to the samplesheet with the `input` parameter:
+
+`params.yaml`:
+```yaml
+# General settings:
+#-----------------------
+project: "p2024-0032"
+outdir: "results_sup"
+custom_config_base: "/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/pipelines/SLURM_profile_for_nextflow"
+
+# Sample details:
+#-----------------------
+input: "test/samplelist.sup.csv"
+
+# References and intervals:
+#-----------------------
+fasta: "/data/references/Homo_sapiens/Ensembl/GRCh38/Sequence/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
+bed: "test/region.bed"
+#str_file: "assets/human_GRCh38_no_alt_analysis_set.trf.bed"
+panel: "assets/1kGP_high_coverage_Illumina.7_117470000_117680000.filtered.SNV_INDEL_SV_phased_panel.bcf"
+
+# Workflow settings:
+#-----------------------
+basecalling_model: 'sup'
+trim_length: 0
+store_trimmed: false
+min_coverage: 10
+genotype_model: "assets/r1041_e82_400bps_sup_v410"
+glnexus_config: "assets/clair3.yml"
+
+# Annotation settings:
+#-----------------------
+genome: 'GRCh38'
+species: 'homo_sapiens'
+vep_cache_version: 112
+vep_cache: "/data/databases/vep"
+```
+
+To run the pipeline, start an interactive session on the IBU cluster:
+
+```bash
+srun --partition pibu_el8 --account p2024-0032 --cpus-per-task=1 --mem=8000 --time=144:00:00 --pty bash
+module load Java
+export NXF_SINGULARITY_CACHEDIR=/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/pipelines/singularity_cache
+export NXF_TEMP=$SCRATCH
+```
 
 Now, you can run the pipeline using:
 
 <!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
 ```bash
-nextflow run nf-core/ontgeno \
-   -profile <docker/singularity/.../institute> \
-   --input samplesheet.csv \
+nextflow run main.nf \
+   -profile unibe_ibu \
+   -params-file test/params.sup.yaml \
    --outdir <OUTDIR>
 ```
 

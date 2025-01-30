@@ -71,25 +71,34 @@ workflow PIPELINE_INITIALISATION {
     //
     // Create channel from input file provided through params.input
     //
-
-    Channel
-        .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
-        .map {
-            meta, fastq_1, fastq_2 ->
+    Channel.fromList(samplesheetToList(input, "${projectDir}/assets/schema_input.json"))
+        // group by sample:
+        .map { meta, fastq_1, fastq_2, fast5_dir ->
+            def id = "${meta.sample}_${meta.run}"
+            def library = meta.lib ?: "A"
+            if (fastq_1) {
                 if (!fastq_2) {
-                    return [ meta.id, meta + [ single_end:true ], [ fastq_1 ] ]
+                    return [ meta.sample, meta + [ id:id, single_end:true, lib:library ], [ fastq_1 ] ]
                 } else {
-                    return [ meta.id, meta + [ single_end:false ], [ fastq_1, fastq_2 ] ]
+                    return [ meta.sample, meta + [ id:id, single_end:false, lib:library ], [ fastq_1, fastq_2 ] ]
                 }
+            } else if (fast5_dir) {
+                def fast5_files = files("${fast5_dir}/*.fast5").findAll { it.size() > 0 }
+                return [ meta.sample, meta + [ id:id, single_end:true, lib:library, fast5:true ], fast5_files ]
+            } else { error("Neither Fastq file nor Fast5 folder specified!") }
         }
         .groupTuple()
-        .map { samplesheet ->
-            validateInputSamplesheet(samplesheet)
+        .map { sample, metas, infiles ->
+            return [ metas.collect { it + [runs_per_sample: infiles.size()] }, infiles ]
         }
-        .map {
-            meta, fastqs ->
-                return [ meta, fastqs.flatten() ]
+        .transpose()
+        // group by sample + lib:
+        .map { meta, infiles -> return [ meta.subMap(['sample', 'lib']), meta, infiles ] }
+        .groupTuple()
+        .map { sample_lib, metas, infiles ->
+            return [ metas.collect { it + [runs_per_lib: infiles.size()] }, infiles ]
         }
+        .transpose()
         .set { ch_samplesheet }
 
     emit:

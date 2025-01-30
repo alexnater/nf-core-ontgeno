@@ -1,0 +1,7 @@
+name: eagle2
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bioconda::eagle2=2.4.1

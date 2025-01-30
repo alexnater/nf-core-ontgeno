@@ -11,7 +11,19 @@
                 "type": "string",
                 "pattern": "^\\S+$",
                 "errorMessage": "Sample name must be provided and cannot contain spaces",
-                "meta": ["id"]
+                "meta": ["sample"]
+            },
+            "runid": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "errorMessage": "Run id must be provided and cannot contain spaces",
+                "meta": ["run"]
+            },
+            "library": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "errorMessage": "Library name must be provided and cannot contain spaces",
+                "meta": ["lib"]
             },
             "fastq_1": {
                 "type": "string",
@@ -26,8 +38,20 @@
                 "exists": true,
                 "pattern": "^\\S+\\.f(ast)?q\\.gz$",
                 "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+            },
+            "fast5_folder": {
+                "type": "string",
+                "format": "directory-path",
+                "errorMessage": "Directory with Fast5 files must be provided if no FastQ file is provided"
             }
         },
-        "required": ["sample", "fastq_1"]
+        "oneOf": [
+            {
+                "required": ["sample", "runid", "fastq_1"]
+            },
+            {
+                "required": ["sample", "runid", "fast5_folder"]
+            }
+        ]
     }
 }
