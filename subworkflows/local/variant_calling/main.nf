@@ -41,7 +41,7 @@ workflow VARIANT_CALLING {
         },
         ch_fasta_fai,
         "ont",
-        model_file
+        ch_bam_bai.map { meta, bam, bai -> meta.model ?: model_file }
     )
     ch_versions = ch_versions.mix(CLAIR3.out.versions.first())
 

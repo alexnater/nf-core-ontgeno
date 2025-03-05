@@ -2,7 +2,7 @@
 #-----------------------
 project: "p2024-0032"
 outdir: "results_sup"
-custom_config_base: "/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/pipelines/SLURM_profile_for_nextflow"
+custom_config_base: "/data/users/anater/nf-core-configs"
 
 # Sample details:
 #-----------------------

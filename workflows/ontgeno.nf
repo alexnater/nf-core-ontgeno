@@ -51,6 +51,7 @@ workflow ONTGENO {
 
     ch_samplesheet.branch { meta, infiles ->
         fast5: meta.fast5
+        bam:   meta.bam
         fastq: true
     }.set { ch_input }
 
@@ -99,7 +100,7 @@ workflow ONTGENO {
     // MODULE: Run minimap2
     //
     FASTP.out.reads
-        .map { meta, fastq -> [ [id: meta.sample, sample: meta.sample], fastq ] }
+        .map { meta, fastq -> [ [id: meta.sample, sample: meta.sample, model: meta.model], fastq ] }
         .groupTuple()
         .set { ch_fastqs }
     

@@ -73,22 +73,22 @@ workflow PIPELINE_INITIALISATION {
     //
     Channel.fromList(samplesheetToList(input, "${projectDir}/assets/schema_input.json"))
         // group by sample:
-        .map { meta, fastq_1, fastq_2, fast5_dir ->
+        .map { meta, fastq, bam, fast5_dir, model ->
             def id = "${meta.sample}_${meta.run}"
             def library = meta.lib ?: "A"
-            if (fastq_1) {
-                if (!fastq_2) {
-                    return [ meta.sample, meta + [ id:id, single_end:true, lib:library ], [ fastq_1 ] ]
-                } else {
-                    return [ meta.sample, meta + [ id:id, single_end:false, lib:library ], [ fastq_1, fastq_2 ] ]
-                }
+            def model_dir = model ? file(model, type: 'dir', checkIfExists: true) : null
+            if (fastq) {
+                return [ meta.sample, meta + [ id:id, lib:library, fastq:true, single_end:true, model:model_dir ], fastq ]
+            } else if (bam) {
+                return [ meta.sample, meta + [ id:id, lib:library, bam:true, single_end:true, model:model_dir ], bam ]
             } else if (fast5_dir) {
                 def fast5_files = files("${fast5_dir}/*.fast5").findAll { it.size() > 0 }
-                return [ meta.sample, meta + [ id:id, single_end:true, lib:library, fast5:true ], fast5_files ]
-            } else { error("Neither Fastq file nor Fast5 folder specified!") }
+                return [ meta.sample, meta + [ id:id, lib:library, fast5:true, single_end:true, model:model_dir ], fast5_files ]
+            } else { error("Neither Fastq/BAM file nor Fast5 folder specified!") }
         }
         .groupTuple()
-        .map { sample, metas, infiles ->
+        .map { samplesheet -> validateInputSamplesheet(samplesheet) }
+        .map { metas, infiles ->
             return [ metas.collect { it + [runs_per_sample: infiles.size()] }, infiles ]
         }
         .transpose()
@@ -170,16 +170,16 @@ def validateInputParameters() {
 // Validate channels from input samplesheet
 //
 def validateInputSamplesheet(input) {
-    def (metas, fastqs) = input[1..2]
+    def (metas, infiles) = input[1..2]
 
-    // Check that multiple runs of the same sample are of the same datatype i.e. single-end / paired-end
-    def endedness_ok = metas.collect{ meta -> meta.single_end }.unique().size == 1
+    // Check that multiple runs of the same sample have the same genotype model
+    def endedness_ok = metas.collect{ meta -> meta.model }.unique().size == 1
     if (!endedness_ok) {
-        error("Please check input samplesheet -> Multiple runs of a sample must be of the same datatype i.e. single-end or paired-end: ${metas[0].id}")
+        error("Please check input samplesheet -> Multiple runs of a sample must be of the same genotype model: ${metas[0].id}")
     }
-
-    return [ metas[0], fastqs ]
+    return [ metas, infiles ]
 }
+
 //
 // Get attribute from genome config file e.g. fasta
 //

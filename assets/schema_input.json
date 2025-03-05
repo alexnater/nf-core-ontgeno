@@ -25,29 +25,40 @@
                 "errorMessage": "Library name must be provided and cannot contain spaces",
                 "meta": ["lib"]
             },
-            "fastq_1": {
+            "fastq": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
                 "pattern": "^\\S+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 1 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "errorMessage": "FastQ file for reads must be provided if no BAM file or Fasta5 folder is provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
             },
-            "fastq_2": {
+            "bam": {
                 "type": "string",
                 "format": "file-path",
                 "exists": true,
-                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "pattern": "^\\S+\\.bam$",
+                "errorMessage": "BAM file for reads must be provided if no FastQ file or Fasta5 folder is provided, cannot contain spaces and must have extension '.bam'"
             },
             "fast5_folder": {
                 "type": "string",
                 "format": "directory-path",
-                "errorMessage": "Directory with Fast5 files must be provided if no FastQ file is provided"
+                "exists": true,
+                "errorMessage": "Directory with Fast5 files must be provided if no FastQ/BAM file is provided"
+            },
+            "genotype_model": {
+                "type": "string",
+                "format": "directory-path",
+                "exists": true,
+                "help_text": "The path to directory containing a Clair3 model",
+                "errorMessage": "Directory with specified Clair3 model doesn't exist"
             }
         },
         "oneOf": [
             {
-                "required": ["sample", "runid", "fastq_1"]
+                "required": ["sample", "runid", "fastq"]
+            },
+            {
+                "required": ["sample", "runid", "bam"]
             },
             {
                 "required": ["sample", "runid", "fast5_folder"]
