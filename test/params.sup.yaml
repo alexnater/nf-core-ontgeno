@@ -2,7 +2,7 @@
 #-----------------------
 project: "p2024-0032"
 outdir: "results_sup"
-custom_config_base: "/data/users/anater/nf-core-configs"
+#custom_config_base: "/data/users/anater/nf-core-configs"
 
 # Sample details:
 #-----------------------
