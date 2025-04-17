@@ -57,9 +57,12 @@ workflow VARIANT_CALLING {
     CLAIR3.out.gvcf
         .join(TABIX_TABIX.out.tbi, failOnDuplicate:true, failOnMismatch:true)
         .join(ch_bam_bai, failOnDuplicate:true, failOnMismatch:true)
-        .map { meta, gvcf, tbi, bam, bai -> [ [id: 'joint', caller: 'clair3'], meta.sample, gvcf, tbi, bam, bai ] }
-        .groupTuple(sort: true)
-        .map { meta, samples, gvcfs, tbis, bams, bais -> [ meta + [samples: tuple(samples)], gvcfs, tbis, bams, bais ] }
+        .map { meta, gvcf, tbi, bam, bai -> [ [id: 'joint', caller: 'clair3'], [ meta.sample, gvcf, tbi, bam, bai ] ] }
+        .groupTuple(sort: { a, b -> a[0] <=> b[0] })
+        .map { meta, tuples ->
+            def (samples, gvcfs, tbis, bams, bais) = tuples.transpose()
+            [ meta + [samples: tuple(samples)], gvcfs, tbis, bams, bais ]
+        }
         .set { ch_from_clair3 }
 
     //
@@ -80,14 +83,20 @@ workflow VARIANT_CALLING {
     DEEPVARIANT_RUNDEEPVARIANT.out.gvcf
         .join(DEEPVARIANT_RUNDEEPVARIANT.out.gvcf_tbi, failOnDuplicate:true, failOnMismatch:true)
         .join(ch_bam_bai, failOnDuplicate:true, failOnMismatch:true)
-        .map { meta, gvcf, tbi, bam, bai -> [ [id: 'joint', caller: 'deepvariant'], meta.sample, gvcf, tbi, bam, bai ] }
-        .groupTuple(sort: true)
-        .map { meta, samples, gvcfs, tbis, bams, bais -> [ meta + [samples: tuple(samples)], gvcfs, tbis, bams, bais ] }
+        .map { meta, gvcf, tbi, bam, bai -> [ [id: 'joint', caller: 'deepvariant'], [ meta.sample, gvcf, tbi, bam, bai ] ] }
+        .groupTuple(sort: { a, b -> a[0] <=> b[0] })
+        .map { meta, tuples ->
+            def (samples, gvcfs, tbis, bams, bais) = tuples.transpose()
+            [ meta + [samples: tuple(samples)], gvcfs, tbis, bams, bais ]
+        }
         .set { ch_from_dv }
 
     //
     // MODULE: Run GATK HaplotypeCaller
     //
+    Channel.empty().set { ch_from_gatk }
+
+/*
     GATK4_HAPLOTYPECALLER (
         ch_bam_bai.map { meta, bam, bai -> [ meta, bam, bai, bed_file, [] ] },
         ch_fasta_fai.map { meta, fasta, fai -> [ meta, fasta ] },
@@ -102,10 +111,14 @@ workflow VARIANT_CALLING {
     GATK4_HAPLOTYPECALLER.out.vcf
         .join(GATK4_HAPLOTYPECALLER.out.tbi, failOnDuplicate:true, failOnMismatch:true)
         .join(ch_bam_bai, failOnDuplicate:true, failOnMismatch:true)
-        .map { meta, gvcf, tbi, bam, bai -> [ [id: 'joint', caller: 'haplotypecaller'], meta.sample, gvcf, tbi, bam, bai ] }
-        .groupTuple(sort: true)
-        .map { meta, samples, gvcfs, tbis, bams, bais -> [ meta + [samples: tuple(samples)], gvcfs, tbis, bams, bais ] }
+        .map { meta, gvcf, tbi, bam, bai -> [ [id: 'joint', caller: 'haplotypecaller'], [ meta.sample, gvcf, tbi, bam, bai ] ] }
+        .groupTuple(sort: { a, b -> a[0] <=> b[0] })
+        .map { meta, tuples ->
+            def (samples, gvcfs, tbis, bams, bais) = tuples.transpose()
+            [ meta + [samples: tuple(samples)], gvcfs, tbis, bams, bais ]
+        }
         .set { ch_from_gatk }
+*/
 
     ch_from_clair3
         .mix(ch_from_dv, ch_from_gatk)
@@ -118,6 +131,9 @@ workflow VARIANT_CALLING {
     //
     // MODULE: Run GATK CombineGVCFs
     //
+    Channel.empty().set { ch_vcf_tbi }
+
+/*
     GATK4_COMBINEGVCFS (
         ch_calls.to_gatk.filter { meta, gvcfs, tbis -> meta.caller != 'deepvariant' },
         ch_fasta_fai.map { meta, fasta, fai -> fasta },
@@ -148,7 +164,7 @@ workflow VARIANT_CALLING {
         .join(GATK4_GENOTYPEGVCFS.out.tbi, failOnDuplicate:true, failOnMismatch:true)
         .map { meta, vcf, tbi -> [ meta + [typer: 'gatk'], vcf, tbi ] }
         .set { ch_vcf_tbi }
-
+*/
     
     // Make sure to use the correct config for GLnexus
     ch_calls.to_glnexus
