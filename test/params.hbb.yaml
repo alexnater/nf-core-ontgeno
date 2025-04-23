@@ -1,0 +1,30 @@
+# General settings:
+#-----------------------
+project: "p2024-0032"
+outdir: "results_hbb"
+#custom_config_base: "/data/users/anater/nf-core-configs"
+
+# Sample details:
+#-----------------------
+input: "test/samplelist.hbb.csv"
+
+# References and intervals:
+#-----------------------
+fasta: "/data/references/Homo_sapiens/Ensembl/GRCh38/Sequence/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
+bed: "test/region_hbb.bed"
+
+# Workflow settings:
+#-----------------------
+basecalling_model: 'hac'
+trim_length: 0
+store_trimmed: false
+min_coverage: 10
+genotype_model: "assets/r1041_e82_400bps_hac_v500"
+glnexus_config: "assets/clair3.yml"
+
+# Annotation settings:
+#-----------------------
+genome: 'GRCh38'
+species: 'homo_sapiens'
+vep_cache_version: 112
+vep_cache: "/data/databases/vep"

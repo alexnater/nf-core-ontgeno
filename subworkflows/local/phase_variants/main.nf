@@ -89,7 +89,6 @@ workflow PHASE_VARIANTS {
     )
     ch_versions = ch_versions.mix(IGVREPORTS_ALL.out.versions.first())
 
-/*
     //
     // MODULE: Run igv-reports per sample
     //
@@ -102,14 +101,13 @@ workflow PHASE_VARIANTS {
               failOnDuplicate:true, failOnMismatch:true)
         .transpose()
         .map { meta, sample, vcf, tbi, bam, bai, bed -> [ meta + [id: sample, sample: sample], vcf, [bed, bam], [tbi, bai] ] }
-        .set { ch_to_reports }
+        .set { ch_to_reports_sample }
 
     IGVREPORTS_SAMPLE (
-        ch_to_reports,
+        ch_to_reports_sample,
         ch_fasta_fai
     )
     ch_versions = ch_versions.mix(IGVREPORTS_SAMPLE.out.versions.first())
-*/
 
     emit:
     vcf_tbi  = WHATSHAP_PHASE.out.vcf_tbi   // channel: [ meta, vcf, tbi ]
