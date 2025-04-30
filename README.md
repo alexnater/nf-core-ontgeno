@@ -50,11 +50,11 @@ First, prepare a samplesheet with your input data that looks as follows:
 `samplesheet.csv`:
 
 ```csv
-sample,runid,library,fastq_1,fastq_2
-patient01,run1,A,/path_to_data/patient01.fastq.gz,
+sample,runid,library,fastq
+patient01,run1,A,/path_to_data/patient01.fastq.gz
 ```
 
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
+Each row represents a fastq file. Files with the same sample id are merged during the analysis. The combination of sample, runid and library should be unique for each file.
 
 Next, prepare a YAML file for the pipeline parameters, referring to the samplesheet with the `input` parameter:
 
@@ -64,7 +64,6 @@ Next, prepare a YAML file for the pipeline parameters, referring to the samplesh
 #-----------------------
 project: "p2024-0032"
 outdir: "results_sup"
-custom_config_base: "/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/pipelines/SLURM_profile_for_nextflow"
 
 # Sample details:
 #-----------------------
@@ -94,6 +93,8 @@ vep_cache_version: 112
 vep_cache: "/data/databases/vep"
 ```
 
+### Running on the IBU cluster
+
 To run the pipeline, start an interactive session on the IBU cluster:
 
 ```bash
@@ -109,15 +110,35 @@ Now, you can run the pipeline using:
 
 ```bash
 nextflow run main.nf \
-   -profile unibe_ibu \
-   -params-file test/params.sup.yaml \
-   --outdir <OUTDIR>
+  -profile unibe_ibu \
+  -params-file test/params.sup.yaml
 ```
 
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
 
 For more details and further functionality, please refer to the [usage documentation](https://nf-co.re/ontgeno/usage) and the [parameter documentation](https://nf-co.re/ontgeno/parameters).
+
+
+### Local execution
+
+To run the pipeline locally on your computer, use the provided `local.config` file:
+
+```bash
+nextflow run main.nf \
+  -c local.config \
+  -params-file test/params.sup.yaml
+```
+
+Make sure to set the environment variable `NXF_SINGULARITY_CACHEDIR` to avoid having to download Singularity containers repeatedly:
+```bash
+echo NXF_SINGULARITY_CACHEDIR
+```
+
+If not defined, set it before running the pipeline to a directory with sufficient free space:
+```bash
+export NXF_SINGULARITY_CACHEDIR=/path/to/singularity_cache
+```
 
 ## Pipeline output
 
