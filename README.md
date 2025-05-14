@@ -140,6 +140,18 @@ If not defined, set it before running the pipeline to a directory with sufficien
 export NXF_SINGULARITY_CACHEDIR=/path/to/singularity_cache
 ```
 
+### Clean-up
+
+To completely clean up all previous pipeline runs, the following files and folders need to be deleted:
+
+```bash
+rm -r work            # The working cache of the pipeline
+rm -r .nextflow       # The Nextflow database containing information for nextflow log
+rm -r <outdir>        # The folder with published results as defined in --outdir
+rm .nextflow.log*     # The log files of previous runs
+```
+After this, it is no longer possible to resume a previous run, so be careful what you delete. To just delete a specific pipeline run, use `nextflow log` to get the ids of all runs and remove the run with `nextflow clean <RUN_NAME> -f`.
+
 ## Pipeline output
 
 To see the results of an example test run with a full size dataset refer to the [results](https://nf-co.re/ontgeno/results) tab on the nf-core website pipeline page.
