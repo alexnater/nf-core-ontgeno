@@ -132,7 +132,7 @@ nextflow run main.nf \
 
 Make sure to set the environment variable `NXF_SINGULARITY_CACHEDIR` to avoid having to download Singularity containers repeatedly:
 ```bash
-echo NXF_SINGULARITY_CACHEDIR
+echo $NXF_SINGULARITY_CACHEDIR
 ```
 
 If not defined, set it before running the pipeline to a directory with sufficient free space:
