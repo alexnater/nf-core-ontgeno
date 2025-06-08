@@ -1,15 +1,12 @@
-repository_type: pipeline
-
-nf_core_version: 3.1.1
-
 lint: {}
-
+nf_core_version: 3.3.1
+repository_type: pipeline
 template:
-  org: nf-core
-  name: ontgeno
-  description: Pipeline for genotype calling from ONT data
   author: Alexander Nater
-  version: 1.0.0dev
-  force: true
-  outdir: .
+  description: Pipeline for genotype calling from ONT data
+  force: false
   is_nfcore: true
+  name: ontgeno
+  org: nf-core
+  outdir: .
+  version: 1.0.0dev
