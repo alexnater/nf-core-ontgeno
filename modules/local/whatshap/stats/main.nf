@@ -3,7 +3,7 @@ process WHATSHAP_STATS {
     label 'process_single'
 
     conda "${moduleDir}/environment.yml"
-    container "containers/bcftools_htslib_whatshap_3d34900752f150d7.sif"
+    container "${projectDir}/assets/containers/bcftools_htslib_whatshap_3d34900752f150d7.sif"
 
     input:
     tuple val(meta), path(vcf), path(tbi), val(samples)

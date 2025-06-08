@@ -3,7 +3,7 @@ process EAGLE2 {
     label 'process_single'
 
     conda "${moduleDir}/environment.yml"
-    container "containers/eagle_2.4.1.sif"
+    container "${projectDir}/assets/containers/eagle_2.4.1.sif"
 
     input:
     tuple val(meta) , path(target), path(target_idx)

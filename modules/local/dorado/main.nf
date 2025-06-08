@@ -2,7 +2,7 @@ process DORADO {
     tag "$meta.id"
     label 'process_gpu'
 
-    container "containers/dorado_0.9.1.sif"
+    container "${projectDir}/assets/containers/dorado_0.9.1.sif"
 
     input:
     tuple val(meta), path(pod5)

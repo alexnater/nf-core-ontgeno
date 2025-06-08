@@ -1,5 +1,5 @@
 .nextflow*
-containers/
+assets/containers/
 assets/r1041*
 work/
 data/

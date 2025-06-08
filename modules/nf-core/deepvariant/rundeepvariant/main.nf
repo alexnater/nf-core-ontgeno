@@ -5,7 +5,7 @@ process DEEPVARIANT_RUNDEEPVARIANT {
     // FIXME Conda is not supported at the moment
     // BUG https://github.com/nf-core/modules/issues/1754
     // BUG https://github.com/bioconda/bioconda-recipes/issues/30310
-    container "containers/deepvariant_1.8.0.sif"
+    container "${projectDir}/assets/containers/deepvariant_1.8.0.sif"
 
     input:
     tuple val(meta), path(input), path(index), path(intervals)
