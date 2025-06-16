@@ -8,6 +8,7 @@ include { FASTQC                 } from '../modules/nf-core/fastqc/main'
 include { NANOPLOT               } from '../modules/nf-core/nanoplot/main'
 include { FASTP                  } from '../modules/nf-core/fastp/main'
 include { MINIMAP2_ALIGN         } from '../modules/nf-core/minimap2/align/main'
+include { SAMTOOLS_VIEW          } from '../modules/nf-core/samtools/view'
 include { MULTIQC                } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { BASECALLING            } from '../subworkflows/local/basecalling'
@@ -116,6 +117,21 @@ workflow ONTGENO {
 
     MINIMAP2_ALIGN.out.bam
         .join(MINIMAP2_ALIGN.out.index, failOnDuplicate:true, failOnMismatch:true)
+        .set { ch_mapped }
+
+    //
+    // MODULE: Run samtools view
+    //
+    SAMTOOLS_VIEW (
+        ch_mapped,
+        ch_fasta_fai.map { meta, fasta, fai -> [ meta, fasta ] },
+        [],
+        "bai"
+    )
+    ch_versions = ch_versions.mix(SAMTOOLS_VIEW.out.versions.first())
+
+    SAMTOOLS_VIEW.out.bam
+        .join(SAMTOOLS_VIEW.out.bai, failOnDuplicate:true, failOnMismatch:true)
         .set { ch_bam_bai }
 
     //
