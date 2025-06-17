@@ -4,13 +4,15 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { CLAIR3                     } from '../../../modules/local/clair3'
-include { TABIX_TABIX                } from '../../../modules/nf-core/tabix/tabix'
-include { DEEPVARIANT_RUNDEEPVARIANT } from '../../../modules/nf-core/deepvariant/rundeepvariant'
-include { GATK4_HAPLOTYPECALLER      } from '../../../modules/nf-core/gatk4/haplotypecaller'
-include { GATK4_COMBINEGVCFS         } from '../../../modules/nf-core/gatk4/combinegvcfs'
-include { GATK4_GENOTYPEGVCFS        } from '../../../modules/nf-core/gatk4/genotypegvcfs'
-include { GLNEXUS                    } from '../../../modules/nf-core/glnexus'
+include { CLAIR3                               } from '../../../modules/local/clair3'
+include { TABIX_TABIX                          } from '../../../modules/nf-core/tabix/tabix'
+include { EXTRACT_POSITIONS as FOCALPOS_CLAIR3 } from '../../../modules/local/extract_positions'
+include { DEEPVARIANT_RUNDEEPVARIANT           } from '../../../modules/nf-core/deepvariant/rundeepvariant'
+include { EXTRACT_POSITIONS as FOCALPOS_DV     } from '../../../modules/local/extract_positions'
+include { GATK4_HAPLOTYPECALLER                } from '../../../modules/nf-core/gatk4/haplotypecaller'
+include { GATK4_COMBINEGVCFS                   } from '../../../modules/nf-core/gatk4/combinegvcfs'
+include { GATK4_GENOTYPEGVCFS                  } from '../../../modules/nf-core/gatk4/genotypegvcfs'
+include { GLNEXUS                              } from '../../../modules/nf-core/glnexus'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -27,6 +29,7 @@ workflow VARIANT_CALLING {
     bed_file      // BED file with genomic intervals
     model_file    // Clair3 model file
     config_file   // GL Nexus config file
+    pos_file      // File with focal positions
 
     main:
 
@@ -53,9 +56,23 @@ workflow VARIANT_CALLING {
     )
     ch_versions = ch_versions.mix(TABIX_TABIX.out.versions.first())
 
-    // Join with indices and group
+    // Join with indices
     CLAIR3.out.gvcf
         .join(TABIX_TABIX.out.tbi, failOnDuplicate:true, failOnMismatch:true)
+        .set { ch_gvcf_tbi_clair3 }
+
+    //
+    // MODULE: Run extract_positions
+    //
+    FOCALPOS_CLAIR3 (
+        ch_gvcf_tbi_clair3,
+        ch_fasta_fai,
+        [ [:], pos_file ]
+    )
+    ch_versions = ch_versions.mix(FOCALPOS_CLAIR3.out.versions.first())
+
+    // Join with bam files and group
+    ch_gvcf_tbi_clair3
         .join(ch_bam_bai, failOnDuplicate:true, failOnMismatch:true)
         .map { meta, gvcf, tbi, bam, bai -> [ [id: 'joint', caller: 'clair3'], [ meta.sample, gvcf, tbi, bam, bai ] ] }
         .groupTuple(sort: { a, b -> a[0] <=> b[0] })
@@ -79,9 +96,23 @@ workflow VARIANT_CALLING {
     )
     ch_versions = ch_versions.mix(DEEPVARIANT_RUNDEEPVARIANT.out.versions.first())
 
-    // Join with indices and group
+    // Join with indices
     DEEPVARIANT_RUNDEEPVARIANT.out.gvcf
         .join(DEEPVARIANT_RUNDEEPVARIANT.out.gvcf_tbi, failOnDuplicate:true, failOnMismatch:true)
+        .set { ch_gvcf_tbi_dv }
+
+    //
+    // MODULE: Run extract_positions
+    //
+    FOCALPOS_DV (
+        ch_gvcf_tbi_dv,
+        ch_fasta_fai,
+        [ [:], pos_file ]
+    )
+    ch_versions = ch_versions.mix(FOCALPOS_DV.out.versions.first())
+
+    // Join with bam files and group
+    ch_gvcf_tbi_dv
         .join(ch_bam_bai, failOnDuplicate:true, failOnMismatch:true)
         .map { meta, gvcf, tbi, bam, bai -> [ [id: 'joint', caller: 'deepvariant'], [ meta.sample, gvcf, tbi, bam, bai ] ] }
         .groupTuple(sort: { a, b -> a[0] <=> b[0] })

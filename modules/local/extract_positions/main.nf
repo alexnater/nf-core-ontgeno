@@ -8,7 +8,7 @@ process EXTRACT_POSITIONS {
         'quay.io/biocontainers/pysam:0.23.0--py39hdd5828d_0' }"
 
     input:
-    tuple val(meta), path(gvcf), path(tbi)
+    tuple val(meta),  path(gvcf),  path(tbi)
     tuple val(meta2), path(fasta), path(fai)
     tuple val(meta3), path(positions)
 
@@ -25,7 +25,7 @@ process EXTRACT_POSITIONS {
         $gvcf \\
         $fasta \\
         $positions \\
-        ${prefix}.focal.gvcf.gz \\
+        ${prefix}.focal.vcf \\
         $args
 
     cat <<-END_VERSIONS > versions.yml

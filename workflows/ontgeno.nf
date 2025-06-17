@@ -34,6 +34,7 @@ def bed_file = file(params.bed, checkIfExists: true)
 def str_file = params.str_file ? file(params.str_file, checkIfExists: true) : []
 def model_file = file(params.genotype_model, checkIfExists: true)
 def config_file = file(params.glnexus_config, checkIfExists: true)
+def pos_file = file(params.focal_positions, checkIfExists: true)
 def panel_file = params.panel ? file(params.panel, checkIfExists: true) : null
 def vep_cache = params.vep_cache ? file(params.vep_cache, type: 'dir', checkIfExists: true) : null
 def ch_fasta_fai = Channel.value([ [id:'ref'], ref_file, fai_file ])
@@ -51,10 +52,19 @@ workflow ONTGENO {
     ch_multiqc_files = Channel.empty()
 
     ch_samplesheet.branch { meta, infiles ->
-        fast5: meta.fast5
-        bam:   meta.bam
-        fastq: true
+        fast5:  meta.fast5
+        bam:    meta.bam
+        fq_dir: meta.fq_dir
+        fastq:  true
     }.set { ch_input }
+
+    ch_input.fq_dir
+        .map { meta, fastq_files ->
+            [ meta, 1..fastq_files.size(), fastq_files ]
+        }
+        .transpose()
+        .map { meta, rep, fastq -> [ meta + [id: "${meta.id}_${rep}"], fastq ] }
+        .set { ch_fastq_dir }
 
     //
     // SUBWORKFLOW: basecalling
@@ -63,7 +73,7 @@ workflow ONTGENO {
         ch_input.fast5,
         params.basecalling_model
     ).fastq
-     .mix(ch_input.fastq)
+     .mix(ch_input.fastq, ch_fastq_dir)
      .set { ch_fastq }
     ch_versions = ch_versions.mix(BASECALLING.out.versions)
 
@@ -120,6 +130,17 @@ workflow ONTGENO {
         .set { ch_mapped }
 
     //
+    // SUBWORKFLOW: bam_stats
+    //
+    BAM_STATS (
+        ch_mapped,
+        ch_fasta_fai,
+        FASTP.out.json,
+        bed_file
+    )
+    ch_versions = ch_versions.mix(BAM_STATS.out.versions)
+
+    //
     // MODULE: Run samtools view
     //
     SAMTOOLS_VIEW (
@@ -135,17 +156,6 @@ workflow ONTGENO {
         .set { ch_bam_bai }
 
     //
-    // SUBWORKFLOW: bam_stats
-    //
-    BAM_STATS (
-        ch_bam_bai,
-        ch_fasta_fai,
-        FASTP.out.json,
-        bed_file
-    )
-    ch_versions = ch_versions.mix(BAM_STATS.out.versions)
-
-    //
     // SUBWORKFLOW: variant_calling
     //
     VARIANT_CALLING (
@@ -154,7 +164,8 @@ workflow ONTGENO {
         ch_dict,
         bed_file,
         model_file,
-        config_file
+        config_file,
+        pos_file
     )
     ch_versions = ch_versions.mix(VARIANT_CALLING.out.versions)
 

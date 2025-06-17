@@ -39,11 +39,17 @@
                 "pattern": "^\\S+\\.bam$",
                 "errorMessage": "BAM file for reads must be provided if no FastQ file or Fasta5 folder is provided, cannot contain spaces and must have extension '.bam'"
             },
+            "fastq_folder": {
+                "type": "string",
+                "format": "directory-path",
+                "exists": true,
+                "errorMessage": "Directory with FastQ files must be provided if no FastQ/BAM file of Fast5 directory is provided"
+            },
             "fast5_folder": {
                 "type": "string",
                 "format": "directory-path",
                 "exists": true,
-                "errorMessage": "Directory with Fast5 files must be provided if no FastQ/BAM file is provided"
+                "errorMessage": "Directory with Fast5 files must be provided if no FastQ/BAM file or FastQ directory is provided"
             },
             "genotype_model": {
                 "type": "string",
@@ -56,6 +62,9 @@
         "oneOf": [
             {
                 "required": ["sample", "runid", "fastq"]
+            },
+            {
+                "required": ["sample", "runid", "fastq_folder"]
             },
             {
                 "required": ["sample", "runid", "bam"]

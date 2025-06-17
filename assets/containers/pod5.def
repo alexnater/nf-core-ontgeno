@@ -1,0 +1,13 @@
+Bootstrap: docker
+From: ubuntu:latest
+
+%post
+	apt -y update && apt -y upgrade
+	apt -y install python3 python3-pip python3-venv
+	python3 -m venv /opt/pod5
+	/opt/pod5/bin/pip install --no-cache-dir pod5
+	apt -y clean && apt -y purge
+	/opt/pod5/bin/pip cache purge
+
+%environment
+	source /opt/pod5/bin/activate

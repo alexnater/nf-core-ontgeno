@@ -26,6 +26,7 @@ min_coverage: 10
 basecalling_model: 'hac'
 genotype_model: "assets/r1041_e82_400bps_hac_v500"
 glnexus_config: "assets/clair3.yml"
+focal_positions: "test/focal_positions.txt"
 
 # Annotation settings:
 #-----------------------

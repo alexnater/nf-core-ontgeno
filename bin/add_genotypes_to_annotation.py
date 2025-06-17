@@ -19,9 +19,9 @@ class VariantSite:
             pos: int,
             qual: float,
             samples: list[str],
-            depths: list[int] | None,
-            alleles: list[int] | None,
-            phased: list[int] | None):
+            depths: list[int],
+            alleles: list[int],
+            phased: list[int]):
         self.chrom = chrom
         self.pos = pos
         self.qual = qual
@@ -32,7 +32,7 @@ class VariantSite:
 
 def read_vcf(
         vcf_file: Path,
-        samples: list[str] | None,
+        samples: list[str],
         interval: int=1000
         ):
     variants = {}
@@ -52,7 +52,7 @@ def read_vcf(
     return samples, variants
 
 
-def read_variant_table(infile: Path, reference: str | None=None, interval: int=1000):
+def read_variant_table(infile: Path, reference: str=None, interval: int=1000):
     variants = {}
     with open(infile, 'r') as inhandle:
         processed = 0
@@ -91,7 +91,7 @@ def add_genotypes_to_annotation(
                 continue
             chrom = fields[1].split(":")[0]
             pos = int(fields[1].split(":")[1].split("-")[0])
-            if fields[cols['Feature']] != reference: continue
+            if reference and fields[cols['Feature']] != reference: continue
             db_var = '-'
             if db:
                 try:

@@ -12,7 +12,7 @@
                     },
                     "deepvariant/rundeepvariant": {
                         "branch": "master",
-                        "git_sha": "e9b59c82daa0fac067284fc52f93011b43952a8f",
+                        "git_sha": "123fdbae2bf2c827b2e11ae09c4d481f446b8ffb",
                         "installed_by": ["modules"]
                     },
                     "ensemblvep/download": {
@@ -92,7 +92,7 @@
                     },
                     "sniffles": {
                         "branch": "master",
-                        "git_sha": "666652151335353eef2fcd58880bcef5bc2928e1",
+                        "git_sha": "05954dab2ff481bcb999f24455da29a5828af08d",
                         "installed_by": ["modules"]
                     },
                     "survivor/merge": {

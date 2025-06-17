@@ -152,6 +152,13 @@
                     "exists": true,
                     "description": "The path to a config YAML file for GLnexus."
                 },
+                "focal_positions": {
+                    "type": "string",
+                    "format": "file-path",
+                    "pattern": "^\\S+\\.txt$",
+                    "exists": true,
+                    "description": "The path to a text file with focal positions to extract."
+                },
                 "genome": {
                     "type": "string",
                     "description": "Genome to use for annotation with ENSEMBL VEP."

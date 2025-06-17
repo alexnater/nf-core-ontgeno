@@ -73,7 +73,7 @@ workflow PIPELINE_INITIALISATION {
     //
     Channel.fromList(samplesheetToList(input, "${projectDir}/assets/schema_input.json"))
         // group by sample:
-        .map { meta, fastq, bam, fast5_dir, model ->
+        .map { meta, fastq, bam, fastq_dir, fast5_dir, model ->
             def id = "${meta.sample}_${meta.run}"
             def library = meta.lib ?: "A"
             def model_dir = model ? file(model, type: 'dir', checkIfExists: true) : null
@@ -81,10 +81,13 @@ workflow PIPELINE_INITIALISATION {
                 return [ meta.sample, meta + [ id:id, lib:library, fastq:true, single_end:true, model:model_dir ], fastq ]
             } else if (bam) {
                 return [ meta.sample, meta + [ id:id, lib:library, bam:true, single_end:true, model:model_dir ], bam ]
+            } else if (fastq_dir) {
+                def fastq_files = files("${fastq_dir}/*.{fastq,fq}.gz").findAll { it.size() > 0 }
+                return [ meta.sample, meta + [ id:id, lib:library, fq_dir:true, single_end:true, model:model_dir ], fastq_files ]
             } else if (fast5_dir) {
                 def fast5_files = files("${fast5_dir}/*.fast5").findAll { it.size() > 0 }
                 return [ meta.sample, meta + [ id:id, lib:library, fast5:true, single_end:true, model:model_dir ], fast5_files ]
-            } else { error("Neither Fastq/BAM file nor Fast5 folder specified!") }
+            } else { error("Neither Fastq/BAM file nor Fast5/FastQ folder specified!") }
         }
         .groupTuple()
         .map { samplesheet -> validateInputSamplesheet(samplesheet) }

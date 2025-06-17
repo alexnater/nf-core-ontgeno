@@ -4,17 +4,17 @@ process GENOTYPES_TO_VEP {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/pysam:0.23.0--py39hdd5828d_0' :
-        'quay.io/biocontainers/pysam:0.23.0--py39hdd5828d_0' }"
+        'https://depot.galaxyproject.org/singularity/pysam:0.23.3--py39hdd5828d_0' :
+        'quay.io/biocontainers/pysam:0.23.3--py39hdd5828d_0' }"
 
     input:
-    tuple val(meta), path(vcf), path(tbi)
+    tuple val(meta) , path(vcf), path(tbi)
     tuple val(meta2), path(tab)
     tuple val(meta3), path(db)
     val(reference)
 
     output:
-    tuple val(meta), path("*.genotypes.tab"), emit: annot
+    tuple val(meta), path("*.genotypes.tab"), emit: genotab
     path "versions.yml"                     , emit: versions
 
     script:
