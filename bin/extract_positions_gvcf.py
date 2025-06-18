@@ -33,14 +33,19 @@ def process_gvcf(
         processed = 0
         for chr, pos in positions:
             refbase = fasta_in.fetch(reference=chr, start=pos-1, end=pos)
-            recs = list(vcf_in.fetch(contig=chr, start=pos-1, stop=pos))
-            if len(recs) != 1:
-                raise Exception(f"Position {chr}:{pos} not found in gVCF file!")
-            rec = recs[0]
-            if not rec.pos == pos:
-                rec.pos = pos
-                rec.alleles = (refbase, rec.alleles[1])
-            vcf_out.write(rec)
+            focal_rec = None            
+            for rec in vcf_in.fetch(contig=chr, start=pos-1, stop=pos):
+                if rec.pos == pos:
+                    focal_rec = rec
+                    break
+                elif rec.start < pos and rec.stop >= pos and len(rec.alts) == 1:
+                    focal_rec = rec
+                    focal_rec.pos = pos
+                    focal_rec.alleles = (refbase, focal_rec.alleles[1])
+            if focal_rec is None:
+                logger.warning(f"Position {chr}:{pos} not found in gVCF file!")
+            else:
+                vcf_out.write(focal_rec)
             processed += 1
         logger.info(f"Processed {processed} positions of gVCF file {vcf_file}.")
 

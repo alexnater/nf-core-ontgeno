@@ -15,7 +15,7 @@ bed: "test/region.hbb.bed"
 
 # Filter settings:
 #-----------------------
-min_length: 200
+min_length: 100
 trim_length: 0
 store_trimmed: false
 min_mapq: 20
@@ -24,7 +24,7 @@ min_coverage: 10
 # Workflow settings:
 #-----------------------
 basecalling_model: 'hac'
-genotype_model: "assets/r1041_e82_400bps_hac_v500"
+genotype_model: "assets/r1041_e82_400bps_hac_v430"
 glnexus_config: "assets/clair3.yml"
 focal_positions: "test/focal_positions.txt"
 
