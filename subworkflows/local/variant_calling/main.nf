@@ -64,12 +64,14 @@ workflow VARIANT_CALLING {
     //
     // MODULE: Run extract_positions
     //
-    FOCALPOS_CLAIR3 (
-        ch_gvcf_tbi_clair3,
-        ch_fasta_fai,
-        [ [:], pos_file ]
-    )
-    ch_versions = ch_versions.mix(FOCALPOS_CLAIR3.out.versions.first())
+    if (pos_file) {
+        FOCALPOS_CLAIR3 (
+            ch_gvcf_tbi_clair3,
+            ch_fasta_fai,
+            [ [:], pos_file ]
+        )
+        ch_versions = ch_versions.mix(FOCALPOS_CLAIR3.out.versions.first())
+    }
 
     // Join with bam files and group
     ch_gvcf_tbi_clair3
@@ -104,12 +106,14 @@ workflow VARIANT_CALLING {
     //
     // MODULE: Run extract_positions
     //
-    FOCALPOS_DV (
-        ch_gvcf_tbi_dv,
-        ch_fasta_fai,
-        [ [:], pos_file ]
-    )
-    ch_versions = ch_versions.mix(FOCALPOS_DV.out.versions.first())
+    if (pos_file) {
+        FOCALPOS_DV (
+            ch_gvcf_tbi_dv,
+            ch_fasta_fai,
+            [ [:], pos_file ]
+        )
+        ch_versions = ch_versions.mix(FOCALPOS_DV.out.versions.first())
+    }
 
     // Join with bam files and group
     ch_gvcf_tbi_dv
