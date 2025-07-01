@@ -75,16 +75,21 @@ input: "test/samplelist.sup.csv"
 # References and intervals:
 #-----------------------
 fasta: "/data/references/Homo_sapiens/Ensembl/GRCh38/Sequence/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
-bed: "test/region.bed"
+bed: "test/region.cftr.bed"
 #str_file: "assets/human_GRCh38_no_alt_analysis_set.trf.bed"
 panel: "assets/1kGP_high_coverage_Illumina.7_117470000_117680000.filtered.SNV_INDEL_SV_phased_panel.bcf"
+
+# Filter settings:
+#-----------------------
+min_length: 100
+trim_length: 0
+store_trimmed: false
+min_mapq: 20
+min_coverage: 10
 
 # Workflow settings:
 #-----------------------
 basecalling_model: 'sup'
-trim_length: 0
-store_trimmed: false
-min_coverage: 10
 genotype_model: "assets/r1041_e82_400bps_sup_v410"
 glnexus_config: "assets/clair3.yml"
 
