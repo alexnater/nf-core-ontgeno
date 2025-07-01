@@ -3,7 +3,9 @@ process WHATSHAP_STATS {
     label 'process_single'
 
     conda "${moduleDir}/environment.yml"
-    container "${projectDir}/assets/containers/bcftools_htslib_whatshap_3d34900752f150d7.sif"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/02/02705a968727688fe6e2c2943cb0967726f7cf32521c8f92d9349fd8509798c1/data':
+        'community.wave.seqera.io/library/bcftools_htslib_whatshap:259a60305e8ff1a9' }"
 
     input:
     tuple val(meta), path(vcf), path(tbi), val(samples)
