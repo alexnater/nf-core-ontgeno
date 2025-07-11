@@ -1,2 +1,3 @@
 sample,runid,library,fastq_folder
-FAY09162_bc01,run1,A,/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/raw_data/Hbb_test_data/barcode01
+barcode01,run1,A,/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/raw_data/Hbb_test_data/barcode01
+barcode04,run1,A,/data/projects/p2024-0032_comprehensive_cftr_gene_sequencing_using_long_read_nanopore_technology/raw_data/Hbb_test_data/barcode04

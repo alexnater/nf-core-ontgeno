@@ -4,12 +4,13 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { FASTQC                 } from '../modules/nf-core/fastqc/main'
-include { NANOPLOT               } from '../modules/nf-core/nanoplot/main'
-include { FASTP                  } from '../modules/nf-core/fastp/main'
-include { MINIMAP2_ALIGN         } from '../modules/nf-core/minimap2/align/main'
+include { FASTQC                 } from '../modules/nf-core/fastqc'
+include { NANOPLOT               } from '../modules/nf-core/nanoplot'
+include { CAT_CAT                } from '../modules/nf-core/cat/cat'
+include { FASTP                  } from '../modules/nf-core/fastp'
+include { MINIMAP2_ALIGN         } from '../modules/nf-core/minimap2/align'
 include { SAMTOOLS_VIEW          } from '../modules/nf-core/samtools/view'
-include { MULTIQC                } from '../modules/nf-core/multiqc/main'
+include { MULTIQC                } from '../modules/nf-core/multiqc'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { BASECALLING            } from '../subworkflows/local/basecalling'
 include { BAM_STATS              } from '../subworkflows/local/bam_stats'
@@ -58,6 +59,15 @@ workflow ONTGENO {
         fastq:  true
     }.set { ch_input }
 
+    //
+    // MODULE: Run fastq concatenation
+    //
+    CAT_CAT (
+        ch_input.fq_dir
+    )
+    ch_versions = ch_versions.mix(CAT_CAT.out.versions.first())
+
+/*
     ch_input.fq_dir
         .map { meta, fastq_files ->
             [ meta, 1..fastq_files.size(), fastq_files ]
@@ -65,6 +75,7 @@ workflow ONTGENO {
         .transpose()
         .map { meta, rep, fastq -> [ meta + [id: "${meta.id}_${rep}"], fastq ] }
         .set { ch_fastq_dir }
+*/
 
     //
     // SUBWORKFLOW: basecalling
@@ -73,7 +84,7 @@ workflow ONTGENO {
         ch_input.fast5,
         params.basecalling_model
     ).fastq
-     .mix(ch_input.fastq, ch_fastq_dir)
+     .mix(ch_input.fastq, CAT_CAT.out.file_out)
      .set { ch_fastq }
     ch_versions = ch_versions.mix(BASECALLING.out.versions)
 
