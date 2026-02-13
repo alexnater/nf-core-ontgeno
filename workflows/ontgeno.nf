@@ -16,7 +16,7 @@ include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { BASECALLING            } from '../subworkflows/local/basecalling'
 include { BAM_STATS              } from '../subworkflows/local/bam_stats'
 include { VARIANT_CALLING        } from '../subworkflows/local/variant_calling'
-include { PHASE_VARIANTS         } from '../subworkflows/local/phase_variants'
+include { PHASE_VARIANTS         } from '../subworkflows/local/phase_variants_single'
 include { ANNOTATE_SNPS          } from '../subworkflows/local/annotate_snps'
 include { SV_CALLING             } from '../subworkflows/local/svcalling'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -173,8 +173,8 @@ workflow ONTGENO {
     // SUBWORKFLOW: phase_variants
     //
     PHASE_VARIANTS (
-        VARIANT_CALLING.out.vcf_tbi,
-        VARIANT_CALLING.out.bam_bai,
+        VARIANT_CALLING.out.vcf_tbi_single,
+        ch_bam_bai,
         ch_fasta_fai,
         bed_file,
         panel_file

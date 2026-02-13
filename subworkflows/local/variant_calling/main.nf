@@ -12,6 +12,7 @@ include { EXTRACT_POSITIONS as FOCALPOS_DV     } from '../../../modules/local/ex
 include { GATK4_HAPLOTYPECALLER                } from '../../../modules/nf-core/gatk4/haplotypecaller'
 include { GATK4_COMBINEGVCFS                   } from '../../../modules/nf-core/gatk4/combinegvcfs'
 include { GATK4_GENOTYPEGVCFS                  } from '../../../modules/nf-core/gatk4/genotypegvcfs'
+include { BCFTOOLS_MPILEUP                     } from '../../../modules/nf-core/bcftools/mpileup'
 include { GLNEXUS                              } from '../../../modules/nf-core/glnexus'
 
 /*
@@ -33,7 +34,7 @@ workflow VARIANT_CALLING {
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     //
     // MODULE: Run Clair3
@@ -129,7 +130,7 @@ workflow VARIANT_CALLING {
     //
     // MODULE: Run GATK HaplotypeCaller
     //
-    Channel.empty().set { ch_from_gatk }
+    channel.empty().set { ch_from_gatk }
 
 /*
     GATK4_HAPLOTYPECALLER (
@@ -166,7 +167,7 @@ workflow VARIANT_CALLING {
     //
     // MODULE: Run GATK CombineGVCFs
     //
-    Channel.empty().set { ch_vcf_tbi }
+    channel.empty().set { ch_vcf_tbi }
 
 /*
     GATK4_COMBINEGVCFS (
@@ -200,7 +201,23 @@ workflow VARIANT_CALLING {
         .map { meta, vcf, tbi -> [ meta + [typer: 'gatk'], vcf, tbi ] }
         .set { ch_vcf_tbi }
 */
-    
+
+    //
+    // MODULE: Run bcftools mpileup per sample
+    //
+    BCFTOOLS_MPILEUP (
+        ch_bam_bai.map { meta, bam, bai -> [ meta, bam, bed_file ] },
+        ch_fasta_fai.map { meta, fasta, fai -> [ meta, fasta ] },
+        false
+    )
+
+    // Join vcf with indices
+    BCFTOOLS_MPILEUP.out.vcf
+        .join(BCFTOOLS_MPILEUP.out.tbi, failOnDuplicate:true, failOnMismatch:true)
+        .map { meta, vcf, tbi -> [ meta + [caller: 'bcftools', typer: 'single'], vcf, tbi ] }
+        .set { vcf_tbi_single }
+
+
     // Make sure to use the correct config for GLnexus
     ch_calls.to_glnexus
         .multiMap { meta, gvcfs ->
@@ -227,6 +244,7 @@ workflow VARIANT_CALLING {
 
     emit:
     vcf_tbi                                 // channel: [ meta, vcf, tbi ]
+    vcf_tbi_single                          // channel: [ meta, vcf, tbi ]
     bam_bai  = ch_calls.bam_bai             // channel: [ meta, [bam], [bai] ]
     versions = ch_versions                  // channel: [ path(versions.yml) ]
 }
