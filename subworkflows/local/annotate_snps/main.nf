@@ -57,6 +57,7 @@ workflow ANNOTATE_SNPS {
     )
     ch_versions = ch_versions.mix(ENSEMBLVEP_VEP.out.versions.first())
 
+/*
     //
     // MODULE: GENOTYPES_TO_VEP
     //
@@ -67,12 +68,13 @@ workflow ANNOTATE_SNPS {
         []
     )
     ch_versions = ch_versions.mix(GENOTYPES_TO_VEP.out.versions.first())
+*/
 
     emit:
     vcf      = ENSEMBLVEP_VEP.out.vcf        // channel: [ meta, vcf ]
     tab      = ENSEMBLVEP_VEP.out.tab        // channel: [ meta, tab ]
     json     = ENSEMBLVEP_VEP.out.json       // channel: [ meta, json ]
     report   = ENSEMBLVEP_VEP.out.report     // channel: html
-    genotab  = GENOTYPES_TO_VEP.out.genotab  // channel: [ meta, vcf ]
+//    genotab  = GENOTYPES_TO_VEP.out.genotab  // channel: [ meta, vcf ]
     versions = ch_versions                   // channel: [ path(versions.yml) ]
 }
