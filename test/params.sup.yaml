@@ -27,6 +27,7 @@ min_coverage: 10
 # Workflow settings:
 #-----------------------
 basecalling_model: 'sup'
+genotype_caller: 'bcftools'
 genotype_model: "assets/r1041_e82_400bps_sup_v410"
 glnexus_config: "assets/clair3.yml"
 

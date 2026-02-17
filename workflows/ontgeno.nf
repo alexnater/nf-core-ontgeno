@@ -163,10 +163,12 @@ workflow ONTGENO {
         ch_fasta_fai,
         ch_dict,
         bed_file,
+        params.genotype_caller,
         model_file,
         config_file,
         pos_file
     )
+    ch_multiqc_files = ch_multiqc_files.mix(VARIANT_CALLING.out.stats.collect{it[1]})
     ch_versions = ch_versions.mix(VARIANT_CALLING.out.versions)
 
     //
@@ -179,6 +181,7 @@ workflow ONTGENO {
         bed_file,
         panel_file
     )
+    ch_multiqc_files = ch_multiqc_files.mix(PHASE_VARIANTS.out.stats.collect{it[1]})
     ch_versions = ch_versions.mix(PHASE_VARIANTS.out.versions)
 
     //
@@ -192,6 +195,7 @@ workflow ONTGENO {
         params.vep_cache_version,
         vep_cache
     )
+    ch_multiqc_files = ch_multiqc_files.mix(ANNOTATE_SNPS.out.report.collect{it[1]})
     ch_versions = ch_versions.mix(ANNOTATE_SNPS.out.versions)
 
     //

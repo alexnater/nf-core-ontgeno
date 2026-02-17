@@ -48,13 +48,8 @@ workflow PHASE_VARIANTS {
     //
     ch_vcf_tbi
         .join(ch_from_eagle, failOnDuplicate:true, remainder:true)
-        .map { meta, vcf, tbi, phased_vcf -> [ meta.sample, meta + [samples: tuple(meta.sample)], vcf, tbi, phased_vcf ] }
-        .join(
-            ch_bam_bai.map { meta, bam, bai -> [ meta.sample, bam, bai ] },
-            failOnDuplicate:true,
-            failOnMismatch:true
-        )
-        .multiMap { sample, meta, vcf, tbi, phased_vcf, bam, bai ->
+        .join(ch_bam_bai, failOnDuplicate:true, failOnMismatch:true)
+        .multiMap { meta, vcf, tbi, phased_vcf, bam, bai ->
             calls: [ meta, vcf ]
             reads: phased_vcf ? [ meta, [bam, phased_vcf], bai ] : [ meta, bam, bai ]
         }.set { ch_to_phase }
@@ -76,17 +71,12 @@ workflow PHASE_VARIANTS {
     ch_versions = ch_versions.mix(WHATSHAP_STATS.out.versions.first())
 
     //
-    // MODULE: Run igv-reports per samples
+    // MODULE: Run igv-reports per sample
     //
     WHATSHAP_PHASE.out.vcf_tbi
         .join(WHATSHAP_STATS.out.bed, failOnDuplicate:true, failOnMismatch:true)
-        .map { meta, vcf, tbi, bed -> [ meta.sample, meta, vcf, tbi, bed ] }
-        .join(
-            ch_bam_bai.map { meta, bam, bai -> [ meta.sample, bam, bai ] },
-            failOnDuplicate:true,
-            failOnMismatch:true
-        )
-        .map { sample, meta, vcf, tbi, bed, bam, bai -> [ meta, vcf, [bed, bam], [tbi, bai] ] }
+        .join(ch_bam_bai, failOnDuplicate:true, failOnMismatch:true)
+        .map { meta, vcf, tbi, bed, bam, bai -> [ meta, vcf, [bed, bam], [tbi, bai] ] }
         .set { ch_to_reports }
 
     IGVREPORTS_SAMPLE (
@@ -98,6 +88,7 @@ workflow PHASE_VARIANTS {
     emit:
     vcf_tbi  = WHATSHAP_PHASE.out.vcf_tbi      // channel: [ meta, vcf, tbi ]
     gtf      = WHATSHAP_STATS.out.gtf          // channel: [ meta, gtf ]
+    stats    = WHATSHAP_STATS.out.tsv          // channel: [ meta, tsv ]
     report   = IGVREPORTS_SAMPLE.out.report    // channel: [ meta, html ]
     versions = ch_versions                     // channel: [ path(versions.yml) ]
 }

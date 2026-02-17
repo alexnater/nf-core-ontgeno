@@ -147,6 +147,12 @@
                     "minimum": 0,
                     "default": 10
                 },
+                "genotype_caller": {
+                    "type": "string",
+                    "description": "Tool to use for genotype calling [Clair3, DeepVariant, BCFtools mpileup].",
+                    "enum": ["clair3", "deepvariant", "bcftools"],
+                    "default": "clair3"
+                },
                 "genotype_model": {
                     "type": "string",
                     "format": "directory-path",

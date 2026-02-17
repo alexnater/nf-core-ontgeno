@@ -1,5 +1,5 @@
 process WHATSHAP_PHASE {
-    tag "${meta.id} - ${meta.caller}"
+    tag "$meta.id"
     label 'process_single'
 
     conda "${moduleDir}/environment.yml"

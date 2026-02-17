@@ -5,7 +5,8 @@
 */
 
 include { CLAIR3                               } from '../../../modules/local/clair3'
-include { TABIX_TABIX                          } from '../../../modules/nf-core/tabix/tabix'
+include { TABIX_TABIX as TABIX_VCF             } from '../../../modules/nf-core/tabix/tabix'
+include { TABIX_TABIX as TABIX_GVCF            } from '../../../modules/nf-core/tabix/tabix'
 include { EXTRACT_POSITIONS as FOCALPOS_CLAIR3 } from '../../../modules/local/extract_positions'
 include { DEEPVARIANT_RUNDEEPVARIANT           } from '../../../modules/nf-core/deepvariant/rundeepvariant'
 include { EXTRACT_POSITIONS as FOCALPOS_DV     } from '../../../modules/local/extract_positions'
@@ -13,6 +14,7 @@ include { GATK4_HAPLOTYPECALLER                } from '../../../modules/nf-core/
 include { GATK4_COMBINEGVCFS                   } from '../../../modules/nf-core/gatk4/combinegvcfs'
 include { GATK4_GENOTYPEGVCFS                  } from '../../../modules/nf-core/gatk4/genotypegvcfs'
 include { BCFTOOLS_MPILEUP                     } from '../../../modules/nf-core/bcftools/mpileup'
+include { BCFTOOLS_MPILEUP as BCFTOOLS_JOINT   } from '../../../modules/nf-core/bcftools/mpileup'
 include { GLNEXUS                              } from '../../../modules/nf-core/glnexus'
 
 /*
@@ -28,6 +30,7 @@ workflow VARIANT_CALLING {
     ch_fasta_fai  // channel: [ meta, fasta, fai ]
     ch_dict       // channel: [ meta, dict ]
     bed_file      // BED file with genomic intervals
+    caller        // Genotype caller to use
     model_file    // Clair3 model file
     config_file   // GL Nexus config file
     pos_file      // File with focal positions
@@ -35,216 +38,179 @@ workflow VARIANT_CALLING {
     main:
 
     ch_versions = channel.empty()
+    ch_stats = channel.empty()
 
-    //
-    // MODULE: Run Clair3
-    //
-    CLAIR3 (
-        ch_bam_bai.map { meta, bam, bai ->
-            [ meta, bam, bai, bed_file ]
-        },
-        ch_fasta_fai,
-        "ont",
-        ch_bam_bai.map { meta, bam, bai -> meta.model ?: model_file }
-    )
-    ch_versions = ch_versions.mix(CLAIR3.out.versions.first())
+    if (caller == 'clair3') {
+        //
+        // MODULE: Run Clair3
+        //
+        CLAIR3 (
+            ch_bam_bai.map { meta, bam, bai ->
+                [ meta, bam, bai, bed_file ]
+            },
+            ch_fasta_fai,
+            "ont",
+            ch_bam_bai.map { meta, bam, bai -> meta.model ?: model_file }
+        )
+        ch_versions = ch_versions.mix(CLAIR3.out.versions.first())
 
-    //
-    // MODULE: Run Tabix
-    //
-    TABIX_TABIX (
+        //
+        // MODULE: Run Tabix on vcf output
+        //
+        TABIX_VCF (
+            CLAIR3.out.vcf
+        )
+        ch_versions = ch_versions.mix(TABIX_VCF.out.versions.first())
+
+        // Join with indices
+        CLAIR3.out.vcf
+            .join(TABIX_VCF.out.tbi, failOnDuplicate:true, failOnMismatch:true)
+            .set { vcf_tbi_single }
+
+        //
+        // MODULE: Run Tabix on gvcf output
+        //
+        TABIX_GVCF (
+            CLAIR3.out.gvcf
+        )
+        ch_versions = ch_versions.mix(TABIX_GVCF.out.versions.first())
+
+        // Join with indices
         CLAIR3.out.gvcf
-    )
-    ch_versions = ch_versions.mix(TABIX_TABIX.out.versions.first())
+            .join(TABIX_GVCF.out.tbi, failOnDuplicate:true, failOnMismatch:true)
+            .set { ch_gvcf_tbi }
 
-    // Join with indices
-    CLAIR3.out.gvcf
-        .join(TABIX_TABIX.out.tbi, failOnDuplicate:true, failOnMismatch:true)
-        .set { ch_gvcf_tbi_clair3 }
+        //
+        // MODULE: Run extract_positions
+        //
+        if (pos_file) {
+            FOCALPOS_CLAIR3 (
+                ch_gvcf_tbi,
+                ch_fasta_fai,
+                [ [:], pos_file ]
+            )
+            ch_versions = ch_versions.mix(FOCALPOS_CLAIR3.out.versions.first())
+        }
 
-    //
-    // MODULE: Run extract_positions
-    //
-    if (pos_file) {
-        FOCALPOS_CLAIR3 (
-            ch_gvcf_tbi_clair3,
-            ch_fasta_fai,
-            [ [:], pos_file ]
+    } else if (caller == 'deepvariant') {
+        //
+        // MODULE: Run DeepVariant
+        //
+        DEEPVARIANT_RUNDEEPVARIANT (
+            ch_bam_bai.map { meta, bam, bai ->
+                [ meta, bam, bai, bed_file ]
+            },
+            ch_fasta_fai.map { meta, fasta, fai -> [ meta, fasta ] },
+            ch_fasta_fai.map { meta, fasta, fai -> [ meta, fai ] },
+            [ [id:'ref'], [] ],
+            [ [:], [] ]
         )
-        ch_versions = ch_versions.mix(FOCALPOS_CLAIR3.out.versions.first())
+        ch_versions = ch_versions.mix(DEEPVARIANT_RUNDEEPVARIANT.out.versions.first())
+
+        // Join vcf output with indices
+        DEEPVARIANT_RUNDEEPVARIANT.out.vcf
+            .join(DEEPVARIANT_RUNDEEPVARIANT.out.vcf_tbi, failOnDuplicate:true, failOnMismatch:true)
+            .set { vcf_tbi_single }
+
+        // Join gvcf output with indices
+        DEEPVARIANT_RUNDEEPVARIANT.out.gvcf
+            .join(DEEPVARIANT_RUNDEEPVARIANT.out.gvcf_tbi, failOnDuplicate:true, failOnMismatch:true)
+            .set { ch_gvcf_tbi }
+
+        //
+        // MODULE: Run extract_positions
+        //
+        if (pos_file) {
+            FOCALPOS_DV (
+                ch_gvcf_tbi,
+                ch_fasta_fai,
+                [ [:], pos_file ]
+            )
+            ch_versions = ch_versions.mix(FOCALPOS_DV.out.versions.first())
+        }
+    
+    } else if (caller == 'bcftools') {
+        //
+        // MODULE: Run bcftools mpileup per sample
+        //
+        BCFTOOLS_MPILEUP (
+            ch_bam_bai.map { meta, bam, bai -> [ meta, bam, bed_file ] },
+            ch_fasta_fai.map { meta, fasta, fai -> [ meta, fasta ] },
+            false
+        )
+
+        // Join vcf with indices
+        BCFTOOLS_MPILEUP.out.vcf
+            .join(BCFTOOLS_MPILEUP.out.tbi, failOnDuplicate:true, failOnMismatch:true)
+            .set { vcf_tbi_single }
+
+        ch_stats.mix(BCFTOOLS_MPILEUP.out.stats)
+
+    } else {
+        error "Invalid genotype caller specified: ${caller}"
     }
 
-    // Join with bam files and group
-    ch_gvcf_tbi_clair3
-        .join(ch_bam_bai, failOnDuplicate:true, failOnMismatch:true)
-        .map { meta, gvcf, tbi, bam, bai -> [ [id: 'joint', caller: 'clair3'], [ meta.sample, gvcf, tbi, bam, bai ] ] }
-        .groupTuple(sort: { a, b -> a[0] <=> b[0] })
-        .map { meta, tuples ->
-            def (samples, gvcfs, tbis, bams, bais) = tuples.transpose()
-            [ meta + [samples: tuple(samples)], gvcfs, tbis, bams, bais ]
-        }
-        .set { ch_from_clair3 }
+    // Run joint variant calling
+    if (caller == 'clair3' || caller == 'deepvariant') {
 
-    //
-    // MODULE: Run DeepVariant
-    //
-    DEEPVARIANT_RUNDEEPVARIANT (
-        ch_bam_bai.map { meta, bam, bai ->
-            [ meta, bam, bai, bed_file ]
-        },
-        ch_fasta_fai.map { meta, fasta, fai -> [ meta, fasta ] },
-        ch_fasta_fai.map { meta, fasta, fai -> [ meta, fai ] },
-        [ [id:'ref'], [] ],
-        [ [:], [] ]
-    )
-    ch_versions = ch_versions.mix(DEEPVARIANT_RUNDEEPVARIANT.out.versions.first())
+        // Group and sort gvcf files and make sure to use the correct config for GLnexus
+        def ch_glnexus = ch_gvcf_tbi
+            .map { meta, gvcf, tbi -> [ [id: 'joint'], [ meta.sample, gvcf, tbi ] ] }
+            .groupTuple(sort: { a, b -> a[0] <=> b[0] })
+            .multiMap { meta, tuples ->
+                def (samples, gvcfs, tbis) = tuples.transpose()
+                input: [ meta + [samples: tuple(samples)], gvcfs ]
+                preset: caller == 'clair3' ? null : 'DeepVariant'
+                config: caller == 'clair3' ? config_file : []
+            }
+        
+        //
+        // MODULE: Run GLnexus
+        //
+        GLNEXUS (
+            ch_glnexus.input,
+            [ [:], bed_file ],
+            ch_glnexus.preset,
+            ch_glnexus.config
+        ).bcf
+            .map { meta, bcf -> [ meta, bcf, [] ] }
+            .set { vcf_tbi_joint }
+        ch_versions = ch_versions.mix(GLNEXUS.out.versions.first())
 
-    // Join with indices
-    DEEPVARIANT_RUNDEEPVARIANT.out.gvcf
-        .join(DEEPVARIANT_RUNDEEPVARIANT.out.gvcf_tbi, failOnDuplicate:true, failOnMismatch:true)
-        .set { ch_gvcf_tbi_dv }
+    } else {
+        channel.empty()
+            .set{ vcf_tbi_joint } 
+/*
+        // Group and sort bam files:
+        def ch_to_bcftools = ch_bam_bai
+            .map { meta, bam, bai -> [ [id: 'joint'], [ meta.sample, bam, bai ] ] }
+            .groupTuple(sort: { a, b -> a[0] <=> b[0] })
+            .map { meta, tuples ->
+                def (samples, bams, bais) = tuples.transpose()
+                [ meta + [samples: tuple(samples)], bams, bais, bed_file ]
+            }
 
-    //
-    // MODULE: Run extract_positions
-    //
-    if (pos_file) {
-        FOCALPOS_DV (
-            ch_gvcf_tbi_dv,
-            ch_fasta_fai,
-            [ [:], pos_file ]
+        //
+        // MODULE: Run bcftools mpileup over all samples
+        //
+        BCFTOOLS_JOINT (
+            ch_to_bcftools,
+            ch_fasta_fai.map { meta, fasta, fai -> [ meta, fasta ] },
+            false
         )
-        ch_versions = ch_versions.mix(FOCALPOS_DV.out.versions.first())
+
+        // Join vcf with indices
+        BCFTOOLS_JOINT.out.vcf
+            .join(BCFTOOLS_JOINT.out.tbi, failOnDuplicate:true, failOnMismatch:true)
+            .set { vcf_tbi_joint }
+
+        ch_stats.mix(BCFTOOLS_JOINT.out.stats)
+*/
     }
-
-    // Join with bam files and group
-    ch_gvcf_tbi_dv
-        .join(ch_bam_bai, failOnDuplicate:true, failOnMismatch:true)
-        .map { meta, gvcf, tbi, bam, bai -> [ [id: 'joint', caller: 'deepvariant'], [ meta.sample, gvcf, tbi, bam, bai ] ] }
-        .groupTuple(sort: { a, b -> a[0] <=> b[0] })
-        .map { meta, tuples ->
-            def (samples, gvcfs, tbis, bams, bais) = tuples.transpose()
-            [ meta + [samples: tuple(samples)], gvcfs, tbis, bams, bais ]
-        }
-        .set { ch_from_dv }
-
-    //
-    // MODULE: Run GATK HaplotypeCaller
-    //
-    channel.empty().set { ch_from_gatk }
-
-/*
-    GATK4_HAPLOTYPECALLER (
-        ch_bam_bai.map { meta, bam, bai -> [ meta, bam, bai, bed_file, [] ] },
-        ch_fasta_fai.map { meta, fasta, fai -> [ meta, fasta ] },
-        ch_fasta_fai.map { meta, fasta, fai -> [ meta, fai ] },
-        ch_dict,
-        [ [:], [] ],
-        [ [:], [] ],
-    )
-    ch_versions = ch_versions.mix(GATK4_HAPLOTYPECALLER.out.versions.first())
-
-    // Join with indices and group
-    GATK4_HAPLOTYPECALLER.out.vcf
-        .join(GATK4_HAPLOTYPECALLER.out.tbi, failOnDuplicate:true, failOnMismatch:true)
-        .join(ch_bam_bai, failOnDuplicate:true, failOnMismatch:true)
-        .map { meta, gvcf, tbi, bam, bai -> [ [id: 'joint', caller: 'haplotypecaller'], [ meta.sample, gvcf, tbi, bam, bai ] ] }
-        .groupTuple(sort: { a, b -> a[0] <=> b[0] })
-        .map { meta, tuples ->
-            def (samples, gvcfs, tbis, bams, bais) = tuples.transpose()
-            [ meta + [samples: tuple(samples)], gvcfs, tbis, bams, bais ]
-        }
-        .set { ch_from_gatk }
-*/
-
-    ch_from_clair3
-        .mix(ch_from_dv, ch_from_gatk)
-        .multiMap { meta, gvcfs, tbis, bams, bais ->
-            to_gatk:    [ meta, gvcfs, tbis ]
-            to_glnexus: [ meta, gvcfs ]
-            bam_bai:    [ meta, bams, bais ]
-        }.set { ch_calls }
-
-    //
-    // MODULE: Run GATK CombineGVCFs
-    //
-    channel.empty().set { ch_vcf_tbi }
-
-/*
-    GATK4_COMBINEGVCFS (
-        ch_calls.to_gatk.filter { meta, gvcfs, tbis -> meta.caller != 'deepvariant' },
-        ch_fasta_fai.map { meta, fasta, fai -> fasta },
-        ch_fasta_fai.map { meta, fasta, fai -> fai },
-        ch_dict.map { meta, dict -> dict }
-    )
-    ch_versions = ch_versions.mix(GATK4_COMBINEGVCFS.out.versions.first())
-
-    GATK4_COMBINEGVCFS.out.combined_gvcf
-        .join(GATK4_COMBINEGVCFS.out.combined_tbi, failOnDuplicate:true, failOnMismatch:true)
-        .map { meta, gvcf, tbi -> [ meta, gvcf, tbi, bed_file, [] ] }
-        .set { ch_to_genotype }
-
-    //
-    // MODULE: Run GATK GenotypeGVCFs
-    //
-    GATK4_GENOTYPEGVCFS (
-        ch_to_genotype,
-        ch_fasta_fai.map { meta, fasta, fai -> [ meta, fasta ] },
-        ch_fasta_fai.map { meta, fasta, fai -> [ meta, fai ] },
-        ch_dict,
-        [ [:], [] ],
-        [ [:], [] ]
-    )
-    ch_versions = ch_versions.mix(GATK4_GENOTYPEGVCFS.out.versions.first())
-
-    GATK4_GENOTYPEGVCFS.out.vcf
-        .join(GATK4_GENOTYPEGVCFS.out.tbi, failOnDuplicate:true, failOnMismatch:true)
-        .map { meta, vcf, tbi -> [ meta + [typer: 'gatk'], vcf, tbi ] }
-        .set { ch_vcf_tbi }
-*/
-
-    //
-    // MODULE: Run bcftools mpileup per sample
-    //
-    BCFTOOLS_MPILEUP (
-        ch_bam_bai.map { meta, bam, bai -> [ meta, bam, bed_file ] },
-        ch_fasta_fai.map { meta, fasta, fai -> [ meta, fasta ] },
-        false
-    )
-
-    // Join vcf with indices
-    BCFTOOLS_MPILEUP.out.vcf
-        .join(BCFTOOLS_MPILEUP.out.tbi, failOnDuplicate:true, failOnMismatch:true)
-        .map { meta, vcf, tbi -> [ meta + [caller: 'bcftools', typer: 'single'], vcf, tbi ] }
-        .set { vcf_tbi_single }
-
-
-    // Make sure to use the correct config for GLnexus
-    ch_calls.to_glnexus
-        .multiMap { meta, gvcfs ->
-            input:  [ meta, gvcfs ]
-            preset: meta.caller == 'clair3' ? null : (meta.caller == 'deepvariant' ? 'DeepVariant' : 'gatk')
-            config: meta.caller == 'clair3' ? config_file : []
-        }.set { ch_glnexus }
-
-    //
-    // MODULE: Run GLnexus
-    //
-    GLNEXUS (
-        ch_glnexus.input,
-        [ [:], bed_file ],
-        ch_glnexus.preset,
-        ch_glnexus.config
-    )
-    ch_versions = ch_versions.mix(GLNEXUS.out.versions.first())
-
-    ch_vcf_tbi
-        .mix(GLNEXUS.out.bcf.map { meta, bcf -> [ meta + [typer: 'glnexus'], bcf, [] ] })
-        .set { vcf_tbi }
-
 
     emit:
-    vcf_tbi                                 // channel: [ meta, vcf, tbi ]
     vcf_tbi_single                          // channel: [ meta, vcf, tbi ]
-    bam_bai  = ch_calls.bam_bai             // channel: [ meta, [bam], [bai] ]
+    vcf_tbi_joint                           // channel: [ meta, vcf, tbi ]
+    stats = ch_stats                        // channel: [ meta, txt ]
     versions = ch_versions                  // channel: [ path(versions.yml) ]
 }

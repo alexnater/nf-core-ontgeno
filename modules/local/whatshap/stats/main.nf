@@ -1,5 +1,5 @@
 process WHATSHAP_STATS {
-    tag "${meta.id} - ${meta.caller}"
+    tag "$meta.id"
     label 'process_single'
 
     conda "${moduleDir}/environment.yml"
@@ -13,6 +13,7 @@ process WHATSHAP_STATS {
     output:
     tuple val(meta), path("*.gtf"), emit: gtf
     tuple val(meta), path("*.bed"), emit: bed
+    tuple val(meta), path("*.tsv"), emit: tsv
     path "versions.yml", emit: versions
 
     when:
@@ -29,6 +30,7 @@ process WHATSHAP_STATS {
             $args \\
             --sample \$sample \\
             --gtf ${prefix}.\${sample}.gtf \\
+            --tsv ${prefix}.\${sample}.tsv \\
             $vcf
     
         sort -k1,1 -k4,4n ${prefix}.\${sample}.gtf | \\
