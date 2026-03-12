@@ -158,6 +158,11 @@
                     "format": "directory-path",
                     "description": "The path to directory containing a Clair3 model."
                 },
+                "joint_calling": {
+                    "type": "boolean",
+                    "description": "Perform joint genotype calling across all samples?",
+                    "default": false
+                },
                 "glnexus_config": {
                     "type": "string",
                     "format": "file-path",

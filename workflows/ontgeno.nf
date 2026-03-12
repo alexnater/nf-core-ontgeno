@@ -15,8 +15,13 @@ include { MULTIQC                } from '../modules/nf-core/multiqc'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { BASECALLING            } from '../subworkflows/local/basecalling'
 include { BAM_STATS              } from '../subworkflows/local/bam_stats'
-include { VARIANT_CALLING        } from '../subworkflows/local/variant_calling'
-include { PHASE_VARIANTS         } from '../subworkflows/local/phase_variants_single'
+if (params.joint_calling){
+    include { VARIANT_CALLING    } from '../subworkflows/local/variant_calling_joint'
+    include { PHASE_VARIANTS     } from '../subworkflows/local/phase_variants_joint'
+} else {
+    include { VARIANT_CALLING    } from '../subworkflows/local/variant_calling'
+    include { PHASE_VARIANTS     } from '../subworkflows/local/phase_variants'
+}
 include { ANNOTATE_SNPS          } from '../subworkflows/local/annotate_snps'
 include { SV_CALLING             } from '../subworkflows/local/svcalling'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -175,10 +180,9 @@ workflow ONTGENO {
     // SUBWORKFLOW: phase_variants
     //
     PHASE_VARIANTS (
-        VARIANT_CALLING.out.vcf_tbi_single,
+        VARIANT_CALLING.out.vcf_tbi,
         ch_bam_bai,
         ch_fasta_fai,
-        bed_file,
         panel_file
     )
     ch_multiqc_files = ch_multiqc_files.mix(PHASE_VARIANTS.out.stats.collect{it[1]})

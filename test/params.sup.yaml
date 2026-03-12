@@ -29,6 +29,7 @@ min_coverage: 10
 basecalling_model: 'sup'
 genotype_caller: 'bcftools'
 genotype_model: "assets/r1041_e82_400bps_sup_v410"
+joint_calling: true
 glnexus_config: "assets/clair3.yml"
 
 # Annotation settings:
