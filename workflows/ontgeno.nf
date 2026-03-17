@@ -15,13 +15,9 @@ include { MULTIQC                } from '../modules/nf-core/multiqc'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { BASECALLING            } from '../subworkflows/local/basecalling'
 include { BAM_STATS              } from '../subworkflows/local/bam_stats'
-if (params.joint_calling){
-    include { VARIANT_CALLING    } from '../subworkflows/local/variant_calling_joint'
-    include { PHASE_VARIANTS     } from '../subworkflows/local/phase_variants_joint'
-} else {
-    include { VARIANT_CALLING    } from '../subworkflows/local/variant_calling'
-    include { PHASE_VARIANTS     } from '../subworkflows/local/phase_variants'
-}
+include { VARIANT_CALLING        } from '../subworkflows/local/variant_calling_combined'
+include { PHASE_VARIANTS         } from '../subworkflows/local/phase_variants'
+include { PHASE_VARIANTS_JOINT   } from '../subworkflows/local/phase_variants_joint'
 include { ANNOTATE_SNPS          } from '../subworkflows/local/annotate_snps'
 include { SV_CALLING             } from '../subworkflows/local/svcalling'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -170,6 +166,7 @@ workflow ONTGENO {
         bed_file,
         params.genotype_caller,
         model_file,
+        params.joint_calling,
         config_file,
         pos_file
     )
@@ -185,14 +182,34 @@ workflow ONTGENO {
         ch_fasta_fai,
         panel_file
     )
+    .vcf_tbi
+    .set { ch_phased }
+
     ch_multiqc_files = ch_multiqc_files.mix(PHASE_VARIANTS.out.stats.collect{it[1]})
     ch_versions = ch_versions.mix(PHASE_VARIANTS.out.versions)
+
+    if (params.joint_calling) {
+        //
+        // SUBWORKFLOW: phase_variants_joint
+        //
+        PHASE_VARIANTS_JOINT (
+            VARIANT_CALLING.out.joint_vcf_tbi,
+            ch_bam_bai,
+            ch_fasta_fai,
+            panel_file
+        )
+        .vcf_tbi
+        .mix(ch_phased)
+
+        ch_multiqc_files = ch_multiqc_files.mix(PHASE_VARIANTS_JOINT.out.stats.collect{it[1]})
+        ch_versions = ch_versions.mix(PHASE_VARIANTS_JOINT.out.versions)
+    }
 
     //
     // SUBWORKFLOW: annotate_snps
     //
     ANNOTATE_SNPS (
-        PHASE_VARIANTS.out.vcf_tbi,
+        ch_phased,
         ch_fasta_fai,
         params.genome,
         params.species,

@@ -16,7 +16,7 @@ include { IGVREPORTS as IGVREPORTS_SAMPLE } from '../../../modules/nf-core/igvre
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-workflow PHASE_VARIANTS {
+workflow PHASE_VARIANTS_JOINT {
 
     take:
     ch_vcf_tbi    // channel: [ meta, vcf, tbi ]

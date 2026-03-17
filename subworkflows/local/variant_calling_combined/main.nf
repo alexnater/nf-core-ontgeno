@@ -36,6 +36,7 @@ workflow VARIANT_CALLING {
 
     ch_versions = channel.empty()
     ch_gvcf_tbi = channel.empty()
+    ch_joint_vcf_tbi = channel.empty()
     ch_stats = channel.empty()
 
     if (caller == 'clair3') {
@@ -150,7 +151,7 @@ workflow VARIANT_CALLING {
                 ch_glnexus.config
             ).bcf
                 .map { meta, bcf -> [ meta, bcf, [] ] }
-                .set { joint_vcf_tbi }
+                .set { ch_joint_vcf_tbi }
             ch_versions = ch_versions.mix(GLNEXUS.out.versions.first())
 
         } else {
@@ -172,7 +173,7 @@ workflow VARIANT_CALLING {
                 ch_fasta_fai.map { meta, fasta, fai -> [ meta, fasta ] }
             )
             .vcf_tbi
-            .set { joint_vcf_tbi }
+            .set { ch_joint_vcf_tbi }
 
             ch_stats.mix(BCFTOOLS_JOINT.out.stats)
         }
@@ -191,9 +192,9 @@ workflow VARIANT_CALLING {
     }
 
     emit:
-    vcf_tbi                          // channel: [ meta, vcf, tbi ]
-    gvcf_tbi = ch_gvcf_tbi           // channel: [ meta, gvcf, tbi ]
-    joint_vcf_tbi                    // channel: [ meta, vcf, tbi ]
-    stats = ch_stats                 // channel: [ meta, txt ]
-    versions = ch_versions           // channel: [ path(versions.yml) ]
+    vcf_tbi                              // channel: [ meta, vcf, tbi ]
+    gvcf_tbi = ch_gvcf_tbi               // channel: [ meta, gvcf, tbi ]
+    joint_vcf_tbi = ch_joint_vcf_tbi     // channel: [ meta, vcf, tbi ]
+    stats = ch_stats                     // channel: [ meta, txt ]
+    versions = ch_versions               // channel: [ path(versions.yml) ]
 }
