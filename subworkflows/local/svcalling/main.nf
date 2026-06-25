@@ -66,7 +66,6 @@ workflow SV_CALLING {
             .map { meta, vcf -> [ meta, vcf, [], [] ] },
         ch_fasta_fai
     )
-    ch_versions = ch_versions.mix(IGVREPORTS_SNIFFLES.out.versions.first())
 
     //
     // MODULE: Run cuteSV per individual in discovery mode
@@ -134,8 +133,6 @@ workflow SV_CALLING {
             .map { meta, vcf -> [ meta, vcf, [], [] ] },
         ch_fasta_fai
     )
-    ch_versions = ch_versions.mix(IGVREPORTS_CUTESV.out.versions.first())
-
 
     emit:
     vcf      = SNIFFLES_JOINT.out.vcf           // channel: [ meta, vcf ]

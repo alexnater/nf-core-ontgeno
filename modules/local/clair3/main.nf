@@ -53,7 +53,7 @@ process CLAIR3 {
 
     stub:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    prefix = task.ext.prefix ?: "${meta.id}"
     def intermediate = args.contain("--remove_intermediate_dir") ? 0 : 1
     def phased = args.contain("--enable_phasing") ? 1 : 0
     def gvcf = args.contain("--gvcf") ? 1 : 0

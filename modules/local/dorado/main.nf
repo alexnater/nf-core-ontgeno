@@ -2,14 +2,15 @@ process DORADO {
     tag "$meta.id"
     label 'process_gpu'
 
-    container "${projectDir}/assets/containers/dorado_0.9.1.sif"
+    container "${projectDir}/assets/containers/dorado_0.9.6.sif"
 
     input:
     tuple val(meta), path(pod5)
     val(model)
 
     output:
-    tuple val(meta), path("*.fastq.gz"), emit: fastq
+    tuple val(meta), path("*.bam")     , optional: true, emit: bam
+    tuple val(meta), path("*.fastq.gz"), optional: true, emit: fastq
     path "versions.yml", emit: versions
 
     when:
@@ -23,7 +24,6 @@ process DORADO {
     dorado \\
         basecaller \\
         $args \\
-        --emit-fastq \\
         $model \\
         $pod5 | gzip -c > ${prefix}.fastq.gz
 
@@ -37,6 +37,7 @@ process DORADO {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
+    touch ${prefix}.bam
     touch ${prefix}.fastq.gz
 
     cat <<-END_VERSIONS > versions.yml

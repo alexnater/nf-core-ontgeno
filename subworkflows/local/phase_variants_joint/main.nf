@@ -33,18 +33,17 @@ workflow PHASE_VARIANTS_JOINT {
     //
     ch_from_eagle = channel.empty()
     if (panel_file) {
-        EAGLE2 (
+        ch_from_eagle = EAGLE2 (
             ch_vcf_tbi,
             [ [id: 'ref'], panel_file, [] ],
             [ [:], [] ],
             ""
         ).vcf
-         .set { ch_from_eagle }
         ch_versions = ch_versions.mix(EAGLE2.out.versions.first())
     }
 
     // Group and sort bam files
-    def ch_bams_bais = ch_bam_bai
+    ch_bams_bais = ch_bam_bai
         .map { meta, bam, bai -> [ [id: 'joint'], [ meta.sample, bam, bai ] ] }
         .groupTuple(sort: { a, b -> a[0] <=> b[0] })
         .map { meta, tuples ->
@@ -55,13 +54,13 @@ workflow PHASE_VARIANTS_JOINT {
     //
     // MODULE: Run WhatsHap phase
     //
-    ch_vcf_tbi
+    ch_to_phase = ch_vcf_tbi
         .join(ch_from_eagle, failOnDuplicate:true, remainder:true)
         .join(ch_bams_bais, failOnDuplicate:true, failOnMismatch:true)
         .multiMap { meta, vcf, tbi, phased_vcf, bams, bais ->
             calls: [ meta, vcf ]
-            reads: phased_vcf ? [ meta, [*bams, phased_vcf], bais ] : [ meta, bams, bais ]
-        }.set { ch_to_phase }
+            reads: phased_vcf ? [ meta, [bams, phased_vcf].flatten(), bais ] : [ meta, bams, bais ]
+        }
 
     WHATSHAP_PHASE (
         ch_to_phase.calls,
@@ -82,16 +81,14 @@ workflow PHASE_VARIANTS_JOINT {
     //
     // MODULE: Run igv-reports over all samples
     //
-    WHATSHAP_PHASE.out.vcf_tbi
+    ch_to_reports = WHATSHAP_PHASE.out.vcf_tbi
         .join(WHATSHAP_STATS.out.bed, failOnDuplicate:true, failOnMismatch:true)
         .map { meta, vcf, tbi, bed -> [ meta, vcf, [bed], [tbi] ] }
-        .set { ch_to_reports }
 
     IGVREPORTS_ALL (
         ch_to_reports,
         ch_fasta_fai
     )
-    ch_versions = ch_versions.mix(IGVREPORTS_ALL.out.versions.first())
 
 /*
     //
@@ -112,7 +109,6 @@ workflow PHASE_VARIANTS_JOINT {
         ch_to_reports_sample,
         ch_fasta_fai
     )
-    ch_versions = ch_versions.mix(IGVREPORTS_SAMPLE.out.versions.first())
 */
 
     emit:

@@ -82,7 +82,6 @@ workflow PHASE_VARIANTS {
         ch_to_reports,
         ch_fasta_fai
     )
-    ch_versions = ch_versions.mix(IGVREPORTS_SAMPLE.out.versions.first())
 
     emit:
     vcf_tbi  = WHATSHAP_PHASE.out.vcf_tbi      // channel: [ meta, vcf, tbi ]

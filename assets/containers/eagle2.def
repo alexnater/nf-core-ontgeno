@@ -2,8 +2,8 @@ Bootstrap: docker
 From: ubuntu:latest
 
 %post
-    apt-get -y update && apt-get -y upgrade
-    apt-get install -y \
+    apt -y update && apt -y upgrade
+    apt install -y \
         build-essential \
         libz-dev \
         liblzma-dev \
@@ -11,9 +11,9 @@ From: ubuntu:latest
         libbz2-dev \
         libgomp1 \
         bzip2 \
-	wget \
+	    wget \
         rsync
-    apt-get clean && apt-get purge
+    apt clean && apt purge
 
     BCFTOOLS_VERSION="1.20"
     EAGLE_VERSION="2.4.1"

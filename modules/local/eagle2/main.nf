@@ -57,7 +57,7 @@ process EAGLE2 {
 
     stub:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    prefix = task.ext.prefix ?: "${meta.id}"
     def extension = args.contain("--vcfOutFormat b") ? "bcf" :
                     args.contain("--vcfOutFormat v") ? "vcf" : "vcf.gz"
     """

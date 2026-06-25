@@ -1,12 +1,12 @@
 # General settings:
 #-----------------------
 project: "p2024-0032"
-outdir: "results_sup"
+outdir: "results_fast5"
 #custom_config_base: "/data/users/anater/nf-core-configs"
 
 # Sample details:
 #-----------------------
-input: "test/samplelist.sup.csv"
+input: "test/samplelist.fast5.csv"
 
 # References and intervals:
 #-----------------------
@@ -17,7 +17,7 @@ panel: "assets/1kGP_high_coverage_Illumina.7_117470000_117680000.filtered.SNV_IN
 
 # Filter settings:
 #-----------------------
-trimmer: 'fastplong'
+trimmer: 'fastp'
 min_length: 100
 trim_length: 0
 store_trimmed: false
@@ -26,10 +26,10 @@ min_coverage: 10
 
 # Workflow settings:
 #-----------------------
-basecalling_model: 'sup'
+basecalling_model: 'hac'
 genotype_caller: 'bcftools'
-genotype_model: "assets/r1041_e82_400bps_sup_v410"
-joint_calling: false
+genotype_model: "assets/r1041_e82_400bps_hac_v410"
+joint_calling: true
 glnexus_config: "assets/clair3.yml"
 
 # Annotation settings:

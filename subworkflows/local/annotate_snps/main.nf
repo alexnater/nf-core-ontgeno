@@ -22,7 +22,7 @@ workflow ANNOTATE_SNPS {
     genome         // Genome version
     species        // Species to annotate
     cache_version  // Ensembl version of cache
-    cache          // optional: path to vep cache
+    cachedir       // optional: path to vep cache
 
     main:
 
@@ -31,8 +31,8 @@ workflow ANNOTATE_SNPS {
     //
     // MODULE: ENSEMBLVEP_DOWNLOAD if needed
     //
-    if (cache) {
-        Channel.value(cache).set { ch_cache }
+    if (cachedir) {
+        ch_cache = channel.value(cachedir)
     } else {
         ENSEMBLVEP_DOWNLOAD (
             [ [id:'cache'], genome, species, cache_version ]

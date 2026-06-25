@@ -3,7 +3,7 @@ process POD5 {
     label 'process_single'
 
     conda "${moduleDir}/environment.yml"
-    container "${projectDir}/assets/containers/pod5_0.3.23.sif"
+    container "${projectDir}/assets/containers/pod5_0.3.36.sif"
 
     input:
     tuple val(meta), path(fast5)
